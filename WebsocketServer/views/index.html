@@ -1,0 +1,149 @@
+{% extends 'layout.html' %}
+
+{% block title %}{% parent %} - Homepage{% endblock %}
+
+{% block content %}
+    <div id="chat" class="row">
+        <div id="members" class="large-3 columns">
+            <div class="panel">
+                <h2>Participants</h2>
+                <ul class="no-bullet"></ul>
+                <h4>Changer de pseudo</h4>
+                <input type="text" id="name"/>
+                <button id="modify_name" class="small expand secondary">Changer</button>
+            </div>
+        </div>
+        <div id="actions" class="large-9 columns">
+            <ul id="messages" class="no-bullet"></ul>
+            <ul id="writers" class="no-bullet"></ul>
+            <form>
+                <textarea id="message"></textarea>
+                <button id="send_message" class="right success" disabled>Envoyer</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block footer_js %}
+    {% parent %}
+
+    <script id="user-template" type="text/x-handlebars-template">
+        <li id="{% raw %}{{token}}{% endraw %}">
+            {% raw %}{{name}}{% endraw %}
+        </li>
+    </script>
+
+    <script id="message-template" type="text/x-handlebars-template">
+        <li>
+            <div class="message panel radius callout">
+                <span class="name label round">{% raw %}{{name}}{% endraw %}</span>
+                <small class="date right">{% raw %}{{date}}{% endraw %}</small>
+                <p class="message">{% raw %}{{message}}{% endraw %}</p>
+            </div>
+        </li>
+    </script>
+
+    <script id="writing-template" type="text/x-handlebars-template">
+        <li id="writer-{% raw %}{{token}}{% endraw %}">
+            <small class="label secondary">{% raw %}{{name}}{% endraw %} est en train d'écrire</small>
+        </li>
+    </script>
+
+    <script src="http://localhost:8082/socket.io/socket.io.js"></script>
+
+    <script type="application/javascript">
+
+        // Template declarations
+        var userSource   = $("#user-template").html();
+        var userTemplate = Handlebars.compile(userSource);
+        var messageSource   = $("#message-template").html();
+        var messageTemplate = Handlebars.compile(messageSource);
+        var writingSource   = $("#writing-template").html();
+        var writingTemplate = Handlebars.compile(writingSource);
+
+        // Connection
+        var socket = io.connect('http://localhost:8082');
+        var oCurrentUser = false;
+
+        // Authentification
+        socket.emit('authentication', {
+            'name': 'Anonymous'
+        });
+        socket.on('authentication_error', function (data) {
+        });
+        socket.on('authentication_success', function (data) {
+            oCurrentUser = data.user;
+            var aUsers = data.users;
+            for (var i in aUsers) {
+                var oUser = aUsers[i];
+                $('#members ul').append(userTemplate(oUser));
+            }
+        });
+
+        // User Management
+        socket.on('new_user', function (oUser) {
+            $('#members ul').append(userTemplate(oUser));
+        });
+        socket.on('remove_user', function (oUser) {
+            $('#'+oUser.token).remove();
+        });
+
+        // Username Management
+        $("#modify_name").on("click", function (e) {
+            e.preventDefault();
+            oCurrentUser.name = $("#name").val();
+            socket.emit('modify_name', oCurrentUser);
+            $("#name").val('');
+        });
+        socket.on('update_user', function (oUser) {
+            $('#'+oUser.token).html(oUser.name);
+        });
+
+        // Message Management
+        $("#send_message").on("click", function (e) {
+            e.preventDefault();
+            var message = $("#message").val();
+            socket.emit('send_message', {
+                'token': oCurrentUser.token,
+                'message': message,
+                'time': new Date().getTime()
+            });
+            $("#message").val('');
+        });
+        socket.on('new_message', function (data) {
+            var date = new Date();
+            date.setTime(data.time);
+            $('#messages').append(
+                messageTemplate({
+                    name: data.user.name,
+                    message: data.message,
+                    date: date.toLocaleTimeString()
+                })
+            );
+        });
+        $("#message").on('keyup', function(e) {
+            if ($(this).val() == '') {
+                socket.emit('user_not_writing', {
+                    'token': oCurrentUser.token
+                });
+                $('#send_message').prop('disabled', true);
+            } else {
+                socket.emit('user_writing', {
+                    'token': oCurrentUser.token
+                });
+                $('#send_message').prop('disabled', false);
+            }
+        });
+        socket.on('user_writing', function (oUser) {
+            if (oUser.token != oCurrentUser.token) {
+                var $writer = $('#writer-'+oUser.token);
+                if ($writer.length == 0) {
+                    $('#writers').append(writingTemplate(oUser));
+                }
+            }
+        });
+        socket.on('user_not_writing', function (data) {
+            $('#writer-'+data.token).remove();
+        });
+    </script>
+{% endblock %}

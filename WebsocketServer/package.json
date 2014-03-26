@@ -1,0 +1,27 @@
+{
+    "name": "NodeJS-demo-chat",
+    "description": "NodeJS demo chat",
+    "version": "0.1.0",
+    "private": true,
+    "author": "Axel Moussard <axel.moussard@gmail.com>",
+    "contributors": [
+        {
+            "name": "Axel Moussard",
+            "email": "axel.moussard@gmail.com"
+        }
+    ],
+    "scripts": {
+        "start": "node ./server.js"
+    },
+    "dependencies": {
+        "express"       :   "3.x",
+        "socket.io"     :   "*",
+        "swig"          :   "*",
+        "crypto"        :   "*"
+    },
+    "noAnalyze": true,
+    "license": "MIT",
+    "engine": {
+        "node": ">=0.8.8"
+    }
+}

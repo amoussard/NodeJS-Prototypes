@@ -1,0 +1,117 @@
+{% extends 'layout.html' %}
+
+{% block title %}{% parent %} - Homepage{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="large-9 columns">
+            <canvas id="canvas" width="600" height="500"></canvas>
+
+            <ul id="colors">
+                <li><a href="#" data-couleur="#000000" class="active color">Noir</a></li>
+                <li><a href="#" data-couleur="#ffffff" class="color">Blanc</a></li>
+                <li><a href="#" data-couleur="#ff0000" class="color">Rouge</a></li>
+                <li><a href="#" data-couleur="brown" class="color">Marron</a></li>
+                <li><a href="#" data-couleur="orange" class="color">Orange</a></li>
+                <li><a href="#" data-couleur="yellow" class="color">Jaune</a></li>
+                <li><a href="#" data-couleur="green" class="color">Vert</a></li>
+                <li><a href="#" data-couleur="cyan" class="color">Cyan</a></li>
+                <li><a href="#" data-couleur="blue" class="color">Bleu</a></li>
+                <li><a href="#" data-couleur="indigo" class="color">Indigo</a></li>
+                <li><a href="#" data-couleur="Violet" class="color">Violet</a></li>
+                <li><a href="#" data-couleur="pink" class="color">Rose</a></li>
+            </ul>
+
+            <form>
+                <label for="pencil_width">Largeur du pinceau :</label>
+                <input id="pencil_width" type="range" min="2" max="50" value="5" />
+                <output id="output">5 pixels</output>
+
+                <br/>
+
+                <button id="reset" >Réinitialiser</button>
+            </form>
+        </div>
+        <div class="large-3 columns hide-for-small">
+            <div id="members">
+                <div class="panel">
+                    <h2>Participants</h2>
+                    <ul class="no-bullet"></ul>
+                    <h4>Changer de pseudo</h4>
+                    <input type="text" id="name"/>
+                    <button id="modify_name" class="small expand secondary">Changer</button>
+                </div>
+            </div>
+            <div id="actions">
+                <ul id="messages" class="no-bullet" style="max-height: 450px; overflow: auto;"></ul>
+                <ul id="writers" class="no-bullet"></ul>
+                <form>
+                    <textarea id="message"></textarea>
+                    <button id="send_message" class="right success" disabled>Envoyer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block footer_js %}
+    {% parent %}
+
+    <script id="user-template" type="text/x-handlebars-template">
+        <li id="{% raw %}{{token}}{% endraw %}">
+            {% raw %}{{name}}{% endraw %}
+        </li>
+    </script>
+
+    <script id="message-template" type="text/x-handlebars-template">
+        <li>
+            <div class="message panel radius callout">
+                <span class="name label round">{% raw %}{{name}}{% endraw %}</span>
+                <small class="date right">{% raw %}{{date}}{% endraw %}</small>
+                <p class="message">{% raw %}{{message}}{% endraw %}</p>
+            </div>
+        </li>
+    </script>
+
+    <script id="writing-template" type="text/x-handlebars-template">
+        <li id="writer-{% raw %}{{token}}{% endraw %}">
+            <small class="label secondary">{% raw %}{{name}}{% endraw %} est en train d'écrire</small>
+        </li>
+    </script>
+
+    <script src="http://whiteboard.dev.axelmoussard.com:8082/socket.io/socket.io.js"></script>
+    <script src="/js/chat.js"></script>
+    <script src="/js/whiteboard.js"></script>
+    <script type="application/javascript">
+
+        jQuery(document).ready(function () {
+            // Template declarations
+            var userSource   = $("#user-template").html();
+            var userTemplate = Handlebars.compile(userSource);
+
+            // Connection
+            var socket = io.connect('http://whiteboard.dev.axelmoussard.com:8082');
+            var oCurrentUser = false;
+
+            // Authentification
+            socket.emit('authentication', {
+                'name': 'Anonymous'
+            });
+            socket.on('authentication_error', function (data) {
+            });
+            socket.on('authentication_success', function (data) {
+                oCurrentUser = data.user;
+                var aUsers = data.users;
+                for (var i in aUsers) {
+                    var oUser = aUsers[i];
+                    $('#members ul').append(userTemplate(oUser));
+                }
+                chat.init(socket, oCurrentUser);
+                whiteboard.init(socket, oCurrentUser);
+            });
+        });
+
+    </script>
+
+{% endblock %}
+

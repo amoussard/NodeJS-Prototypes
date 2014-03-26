@@ -1,0 +1,39 @@
+#members {
+    width: 20%;
+    background-color: grey;
+    float: left;
+}
+
+#members ul {
+    width: 20%;
+    list-style: none;
+}
+
+#actions {
+    width: 80%;
+    min-height: 800px;
+    margin-left: 20%;
+}
+
+#messages {
+    height: 700px;
+    border: 1px solid black;
+    margin: 0;
+    padding: 0;
+}
+
+#actions form {
+     height: 100px;
+ }
+
+#actions form textarea {
+    width: 80%;
+    height: 50px;
+    float: left;
+}
+
+#actions form button {
+    margin-left: 6px;
+    width: 19%;
+    height: 56px;
+}
